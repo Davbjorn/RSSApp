@@ -66,10 +66,42 @@ namespace RSSApp.PL {
         private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e) {
 
         }
+        private string getFilter() {
+
+
+            if(cbFilter.SelectedItem == null) {
+                return null;
+            }
+
+            if(cbFilter.SelectedItem is string || cbFilter.SelectedItem == "All") {
+                return null;
+            }
+            return ((Category)cbFilter.SelectedItem).Name;
+        }
 
         private void UpdateFeedList() {
             gvFeeds.Rows.Clear();
-            foreach (var Feed in FeedsController.GetFeeds()) {
+
+            var filterdList = new List<RSSFeed>();
+            if (getFilter() == null) {
+                filterdList = FeedsController.GetFeeds();
+
+            } else {
+                var Query =
+                    from feed in FeedsController.GetFeeds()
+                    where feed.Category.Name == getFilter()
+                    select feed;
+
+
+                foreach (var feed in Query) {
+                    filterdList.Add(feed);
+                }
+            }
+        
+           
+
+
+            foreach (var Feed in filterdList) {
                 int row = gvFeeds.Rows.Add();
                 gvFeeds.Rows[row].Cells["ColName"].Value = Feed.Title;
                 gvFeeds.Rows[row].Cells["ColTimer"].Value = Feed.getUpdateInterval().ToString();
@@ -103,8 +135,17 @@ namespace RSSApp.PL {
         private void UpdateCategories() {
             UpdateCategoriesComboBox();
             UpdateCategoriesList();
+            UpdateFilterCategories();
         }
-        
+        private void UpdateFilterCategories() {
+            cbFilter.Items.Clear();
+
+            cbFilter.Items.Add("All");
+            foreach (var item in CategoriesController.GetCategories()) {
+                cbFilter.Items.Add(item);
+            }
+
+        }
         private void UpdateCategoriesComboBox() {
             cbFeedCategory.Items.Clear();
             ((DataGridViewComboBoxColumn)gvFeeds.Columns["ColCategory"]).Items.Clear();
@@ -131,9 +172,24 @@ namespace RSSApp.PL {
 
         private void btFeedAdd_Click(object sender, EventArgs e) {
             string feedUrl = tbURL.Text;
-            try {
 
-                FeedsController.AddFeed(new Uri(feedUrl), (Category)cbFeedCategory.SelectedItem);
+
+            try {
+                if (int.TryParse((String)tbTimer.Text, out int value)) {
+                    try {
+                        Validation.ValidateRefresh(value);
+                    } catch (TimeSpanToShortExeption) {
+                        MessageBox.Show("Intervall för kort");
+                        return;
+                    }
+
+
+
+                } else {
+                    MessageBox.Show("Intervall måste vara en siffra");
+                    return;
+                }
+                FeedsController.AddFeed(new Uri(feedUrl), (Category)cbFeedCategory.SelectedItem, value);
             } catch (Exception ex) {
                 var message = "";
                 if (ex is ValidationExeption) {
@@ -155,6 +211,7 @@ namespace RSSApp.PL {
             }
 
             tbURL.Clear();
+            tbTimer.Clear();
 
 
             UpdateFeedList();
@@ -318,6 +375,11 @@ namespace RSSApp.PL {
         private void updatedEdit(object sender, EventArgs e) {
             UpdateFeedList();
         }
-        
+
+        private void cbFilter_SelectedIndexChanged(object sender, EventArgs e) {
+            UpdateFeedList();
+
+
+        }
     }
 }

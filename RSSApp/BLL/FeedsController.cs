@@ -30,6 +30,19 @@ namespace RSSApp.BLL {
                 throw ex;
             }
         }
+        public static void AddFeed(Uri uri, Category category, int Interval) {
+            if (category == null) {
+                throw new ArgumentException();
+            }
+            try {
+                var feed = new RSSFetcher(uri).Fetch();
+                feed.Category = category;
+                feed.setUpdateInterval(Interval);
+                AddFeed(feed);
+            } catch (ValidationExeption ex) {
+                throw ex;
+            }
+        }
         public static void AddFeed(RSSFeed feed) {
             try {
                 Validation.ValidateFeed(feed);

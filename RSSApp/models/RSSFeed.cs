@@ -32,6 +32,13 @@ namespace RSSApp.models {
             
             
         }
+        public RSSFeed(Uri URI, int UpdateInterval) {
+            this.UpdateInterval = UpdateInterval;
+            this.URI = URI;
+            Podcasts = new List<RSSItem>();
+
+
+        }
 
         public void StartTimer() {
             timer.Interval = UpdateInterval;
